@@ -5,7 +5,7 @@ import (
 	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
 )
 
-type Response struct {
+type Header struct {
 	// 集群ID
 	ClusterId uint64
 	// 处理本次请求的节点ID
@@ -16,8 +16,8 @@ type Response struct {
 	RaftTerm uint64
 }
 
-func newResponse(header *pb.ResponseHeader) *Response {
-	return &Response{
+func newResponse(header *pb.ResponseHeader) *Header {
+	return &Header{
 		ClusterId: header.ClusterId,
 		MemberId:  header.MemberId,
 		Revision:  header.Revision,
@@ -25,6 +25,6 @@ func newResponse(header *pb.ResponseHeader) *Response {
 	}
 }
 
-func (receiver *Response) String() string {
+func (receiver *Header) String() string {
 	return fmt.Sprintf("cluster_id:%d member_id:%d revision:%d raft_term:%d ", receiver.ClusterId, receiver.MemberId, receiver.Revision, receiver.RaftTerm)
 }

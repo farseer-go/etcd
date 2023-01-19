@@ -5,8 +5,9 @@ import (
 	"go.etcd.io/etcd/api/v3/mvccpb"
 )
 
+// KeyValue KV信息
 type KeyValue struct {
-	Header *Response
+	Header *Header
 	// key 保存到etcd的KEY
 	Key string
 	// 创建KEY时的集群Revision（此后这个版本号不会再变）

@@ -38,7 +38,7 @@ func newClient(config etcdConfig) IClient {
 	}
 }
 
-func (receiver *client) Put(key, value string) (*Response, error) {
+func (receiver *client) Put(key, value string) (*Header, error) {
 	rsp, err := receiver.etcdCli.Put(todo, key, value)
 	if err != nil {
 		_ = flog.Error(err)
@@ -47,7 +47,7 @@ func (receiver *client) Put(key, value string) (*Response, error) {
 	return newResponse(rsp.Header), err
 }
 
-func (receiver *client) PutJson(key string, data any) (*Response, error) {
+func (receiver *client) PutJson(key string, data any) (*Header, error) {
 	jsonValue, _ := json.Marshal(data)
 	rsp, err := receiver.etcdCli.Put(todo, key, string(jsonValue))
 	if err != nil {
@@ -85,7 +85,7 @@ func (receiver *client) GetPrefixKey(prefixKey string) (map[string]*KeyValue, er
 	return result, err
 }
 
-func (receiver *client) Delete(key string) (*Response, error) {
+func (receiver *client) Delete(key string) (*Header, error) {
 	rsp, err := receiver.etcdCli.Delete(todo, key)
 	if err != nil {
 		_ = flog.Error(err)
@@ -94,13 +94,47 @@ func (receiver *client) Delete(key string) (*Response, error) {
 	return newResponse(rsp.Header), err
 }
 
-func (receiver *client) DeletePrefixKey(prefixKey string) (*Response, error) {
+func (receiver *client) DeletePrefixKey(prefixKey string) (*Header, error) {
 	rsp, err := receiver.etcdCli.Delete(todo, prefixKey, etcdV3.WithPrefix())
 	if err != nil {
 		_ = flog.Error(err)
 		return nil, err
 	}
 	return newResponse(rsp.Header), err
+}
+
+func (receiver *client) Watch(ctx context.Context, key string, watchFunc func(event WatchEvent)) {
+	watch := receiver.etcdCli.Watch(ctx, key)
+	// 异步处理
+	go func() {
+		for response := range watch {
+			for _, event := range response.Events {
+				watchEvent := WatchEvent{
+					Type: event.Type.String(),
+					Kv:   newValue(event.Kv, &response.Header),
+				}
+				watchFunc(watchEvent)
+			}
+		}
+		flog.Info("退出了")
+	}()
+}
+
+func (receiver *client) WatchPrefixKey(ctx context.Context, prefixKey string, watchFunc func(event WatchEvent)) {
+	watch := receiver.etcdCli.Watch(ctx, prefixKey, etcdV3.WithPrefix())
+	// 异步处理
+	go func() {
+		for response := range watch {
+			for _, event := range response.Events {
+				watchEvent := WatchEvent{
+					Type: event.Type.String(),
+					Kv:   newValue(event.Kv, &response.Header),
+				}
+				watchFunc(watchEvent)
+			}
+		}
+		flog.Info("退出了")
+	}()
 }
 
 func (receiver *client) Original() *etcdClient {
