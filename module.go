@@ -2,6 +2,7 @@ package etcd
 
 import (
 	"github.com/farseer-go/fs/configure"
+	"github.com/farseer-go/fs/container"
 	"github.com/farseer-go/fs/flog"
 	"github.com/farseer-go/fs/modules"
 )
@@ -17,13 +18,18 @@ func (module Module) PreInitialize() {
 }
 
 func (module Module) Initialize() {
-	etcdConfigs := configure.ParseConfigs[etcdConfig]("Etcd")
-	for _, rabbitConfig := range etcdConfigs {
-		if rabbitConfig.Server == "" {
+	etcdConfigs := configure.GetSubNodes("Etcd")
+	for name, configString := range etcdConfigs {
+		config := configure.ParseString[etcdConfig](configString.(string))
+		if config.Server == "" {
 			_ = flog.Error("Etcd配置缺少Server节点")
 			continue
 		}
 
+		// 注册实例
+		container.RegisterTransient(func() IClient {
+			return newClient(config)
+		}, name)
 	}
 }
 
