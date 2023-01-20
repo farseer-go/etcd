@@ -19,10 +19,12 @@ func TestConnect(t *testing.T) {
 	watchResult := make(map[string]string)
 	client.Watch(context.TODO(), "/test/b1", func(event etcd.WatchEvent) {
 		watchResult[event.Kv.Key] = event.Kv.Value
+		event.IsModify()
 	})
 
 	client.WatchPrefixKey(context.TODO(), "/test/", func(event etcd.WatchEvent) {
 		watchResult[event.Kv.Key] = event.Kv.Value
+		event.IsCreate()
 	})
 
 	putRsp, err := client.Put("/test/a1", "1")
