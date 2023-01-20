@@ -22,7 +22,7 @@ type IClient interface {
 	// DeletePrefixKey 根据KEY前缀来删除
 	DeletePrefixKey(prefixKey string) (*Header, error)
 	// Exists 判断是否存在KEY
-	Exists(key string) (bool, error)
+	Exists(key string) bool
 	// Watch 监听KEY
 	Watch(ctx context.Context, key string, watchFunc func(event WatchEvent))
 	// WatchPrefixKey 根据KEY前缀来监听

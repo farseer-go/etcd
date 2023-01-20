@@ -100,14 +100,14 @@ func (receiver *client) GetPrefixKey(prefixKey string) (map[string]*KeyValue, er
 	return result, err
 }
 
-func (receiver *client) Exists(key string) (bool, error) {
+func (receiver *client) Exists(key string) bool {
 	rsp, err := receiver.etcdCli.Get(todo, key)
 	if err != nil {
 		_ = flog.Error(err)
-		return false, err
+		return false
 	}
-
-	return len(rsp.Kvs) > 0 && rsp.Kvs[0].Version > 0, nil
+	exists := len(rsp.Kvs) > 0 && rsp.Kvs[0].Version > 0
+	return exists
 }
 
 func (receiver *client) Delete(key string) (*Header, error) {
