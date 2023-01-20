@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"github.com/farseer-go/etcd"
 	"github.com/farseer-go/fs"
 	"github.com/farseer-go/fs/container"
@@ -23,8 +24,21 @@ func TestLease(t *testing.T) {
 	info, _ := client.LeaseInfo(leaseID)
 	assert.Equal(t, int64(2), info.GrantedTTL)
 
+	assert.True(t, client.Exists("/test/lease1"))
+	assert.True(t, client.Exists("/test/lease2"))
+	assert.True(t, client.Exists("/test/lease3"))
 	time.Sleep(2500 * time.Millisecond)
 	assert.False(t, client.Exists("/test/lease1"))
 	assert.False(t, client.Exists("/test/lease2"))
 	assert.False(t, client.Exists("/test/lease3"))
+
+	leaseID, _ = client.LeaseGrant(1)
+	_, _ = client.PutLease("/test/lease4", "1", leaseID)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	_ = client.LeaseKeepAlive(ctx, leaseID)
+	time.Sleep(2500 * time.Millisecond)
+	assert.True(t, client.Exists("/test/lease4"))
+	_, _ = client.LeaseRevoke(leaseID)
+	assert.False(t, client.Exists("/test/lease4"))
+	cancelFunc()
 }

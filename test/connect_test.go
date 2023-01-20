@@ -15,7 +15,7 @@ func TestConnect(t *testing.T) {
 	etcd.Module{}.Shutdown()
 	client := container.Resolve[etcd.IClient]("default")
 	assert.Equal(t, "", client.Original().Username)
-	
+
 	watchResult := make(map[string]string)
 	client.Watch(context.TODO(), "/test/b1", func(event etcd.WatchEvent) {
 		watchResult[event.Kv.Key] = event.Kv.Value
@@ -79,4 +79,6 @@ func TestConnect(t *testing.T) {
 	assert.Equal(t, "", watchResult["/test/a2"])
 	assert.Equal(t, "", watchResult["/test/a1/b1"])
 	assert.Equal(t, "", watchResult["/test/b1"])
+
+	client.Close()
 }

@@ -206,7 +206,7 @@ func (receiver *client) LeaseKeepAlive(ctx context.Context, leaseId LeaseID) err
 	}
 
 	// 自动续租
-	func() {
+	go func() {
 		for {
 			select {
 			case keepResp := <-keepRespChan:
