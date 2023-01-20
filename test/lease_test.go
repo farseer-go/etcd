@@ -5,6 +5,7 @@ import (
 	"github.com/farseer-go/etcd"
 	"github.com/farseer-go/fs"
 	"github.com/farseer-go/fs/container"
+	"github.com/farseer-go/fs/flog"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -32,6 +33,8 @@ func TestLease(t *testing.T) {
 	assert.False(t, client.Exists("/test/lease2"))
 	assert.False(t, client.Exists("/test/lease3"))
 
+	// 持续续约
+	flog.Info("持续续约")
 	leaseID, _ = client.LeaseGrant(1)
 	_, _ = client.PutLease("/test/lease4", "1", leaseID)
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -41,4 +44,16 @@ func TestLease(t *testing.T) {
 	_, _ = client.LeaseRevoke(leaseID)
 	assert.False(t, client.Exists("/test/lease4"))
 	cancelFunc()
+
+	// 续约一次
+	leaseID, _ = client.LeaseGrant(1)
+	_, _ = client.PutLease("/test/lease5", "1", leaseID)
+	for i := 0; i < 3; i++ {
+		time.Sleep(time.Second)
+		_ = client.LeaseKeepAliveOnce(leaseID)
+		flog.Info("续约一次")
+	}
+	assert.True(t, client.Exists("/test/lease5"))
+	time.Sleep(2500 * time.Millisecond)
+	assert.False(t, client.Exists("/test/lease5"))
 }
