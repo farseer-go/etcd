@@ -14,7 +14,8 @@ func TestConnect(t *testing.T) {
 	fs.Initialize[etcd.Module]("test etcd")
 	etcd.Module{}.Shutdown()
 	client := container.Resolve[etcd.IClient]("default")
-
+	assert.Equal(t, "", client.Original().Username)
+	
 	watchResult := make(map[string]string)
 	client.Watch(context.TODO(), "/test/b1", func(event etcd.WatchEvent) {
 		watchResult[event.Kv.Key] = event.Kv.Value
@@ -34,7 +35,7 @@ func TestConnect(t *testing.T) {
 	putRsp, err = client.Put("/test/b1", "3")
 	assert.NoError(t, err)
 
-	putRsp, err = client.Put("/test/a1/b1", "4")
+	putRsp, err = client.PutJson("/test/a1/b1", []int{4})
 	assert.NoError(t, err)
 
 	result, err := client.Get("/test/a1")
@@ -46,19 +47,19 @@ func TestConnect(t *testing.T) {
 	assert.Equal(t, putRsp.Revision, result.Header.Revision)
 
 	result, err = client.Get("/test/a1/b1")
-	assert.Equal(t, "4", result.Value)
+	assert.Equal(t, "[4]", result.Value)
 	assert.Equal(t, putRsp.Revision, result.Header.Revision)
 
 	results, err := client.GetPrefixKey("/test")
 	assert.Equal(t, "1", results["/test/a1"].Value)
 	assert.Equal(t, "2", results["/test/a2"].Value)
-	assert.Equal(t, "4", results["/test/a1/b1"].Value)
+	assert.Equal(t, "[4]", results["/test/a1/b1"].Value)
 	assert.Equal(t, "3", results["/test/b1"].Value)
 
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, "1", watchResult["/test/a1"])
 	assert.Equal(t, "2", watchResult["/test/a2"])
-	assert.Equal(t, "4", watchResult["/test/a1/b1"])
+	assert.Equal(t, "[4]", watchResult["/test/a1/b1"])
 	assert.Equal(t, "3", watchResult["/test/b1"])
 
 	_, _ = client.Delete("/test/a1/b1")
