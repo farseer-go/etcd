@@ -5,6 +5,7 @@ import (
 	"github.com/farseer-go/etcd"
 	"github.com/farseer-go/fs"
 	"github.com/farseer-go/fs/container"
+	"github.com/farseer-go/fs/flog"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -30,6 +31,7 @@ func TestConnect(t *testing.T) {
 	putRsp, err := client.Put("/test/a1", "1")
 	assert.NoError(t, err)
 	assert.Less(t, int64(0), putRsp.Revision)
+	flog.Info(putRsp.String())
 
 	putRsp, err = client.Put("/test/a2", "2")
 	assert.NoError(t, err)
