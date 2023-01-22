@@ -15,10 +15,10 @@ func TestLock(t *testing.T) {
 	client := container.Resolve[etcd.IClient]("default")
 
 	result := 0
-	unLock1, _ := client.Lock("/lock/1", 3)
+	unLock1, _ := client.Lock("/lock/1", 1)
 	flog.Info("上锁：unLock1")
 	go func() {
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(3000 * time.Millisecond)
 		flog.Info("解锁：unLock1")
 		unLock1()
 		result++
