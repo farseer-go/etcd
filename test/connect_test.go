@@ -13,7 +13,6 @@ import (
 
 func TestConnect(t *testing.T) {
 	fs.Initialize[etcd.Module]("test etcd")
-	etcd.Module{}.Shutdown()
 	client := container.Resolve[etcd.IClient]("default")
 	assert.Equal(t, "", client.Original().Username)
 
@@ -85,4 +84,5 @@ func TestConnect(t *testing.T) {
 	assert.Equal(t, "", watchResult["/test/b1"])
 
 	client.Close()
+	etcd.Module{}.Shutdown()
 }
