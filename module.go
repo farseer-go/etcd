@@ -14,9 +14,6 @@ func (module Module) DependsModule() []modules.FarseerModule {
 	return nil
 }
 
-func (module Module) PreInitialize() {
-}
-
 func (module Module) Initialize() {
 	etcdConfigs := configure.GetSubNodes("Etcd")
 	for name, configString := range etcdConfigs {
@@ -31,10 +28,4 @@ func (module Module) Initialize() {
 			return newClient(config)
 		}, name)
 	}
-}
-
-func (module Module) PostInitialize() {
-}
-
-func (module Module) Shutdown() {
 }
