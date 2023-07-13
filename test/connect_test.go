@@ -84,5 +84,4 @@ func TestConnect(t *testing.T) {
 	assert.Equal(t, "", watchResult["/test/b1"])
 
 	client.Close()
-	etcd.Module{}.Shutdown()
 }
