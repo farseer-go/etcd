@@ -189,9 +189,7 @@ func (receiver *client) LeaseGrant(ttl int64, keys ...string) (LeaseID, error) {
 			}
 			if len(rsp.Kvs) > 0 {
 				_, err = receiver.etcdCli.Put(todo, key, string(rsp.Kvs[0].Value), etcdV3.WithLease(leaseGrantResponse.ID))
-				if err != nil {
-					_ = flog.Error(err)
-				}
+				flog.ErrorIfExists(err)
 			}
 		}
 	}
@@ -201,8 +199,7 @@ func (receiver *client) LeaseGrant(ttl int64, keys ...string) (LeaseID, error) {
 func (receiver *client) LeaseKeepAlive(ctx context.Context, leaseId LeaseID) error {
 	keepRespChan, err := receiver.etcdCli.KeepAlive(ctx, etcdV3.LeaseID(leaseId))
 	if err != nil {
-		_ = flog.Error(err)
-		return err
+		return flog.Error(err)
 	}
 
 	// 自动续租
@@ -226,9 +223,7 @@ func (receiver *client) LeaseKeepAlive(ctx context.Context, leaseId LeaseID) err
 
 func (receiver *client) LeaseKeepAliveOnce(leaseId LeaseID) error {
 	_, err := receiver.etcdCli.KeepAliveOnce(todo, etcdV3.LeaseID(leaseId))
-	if err != nil {
-		_ = flog.Error(err)
-	}
+	flog.ErrorIfExists(err)
 	return err
 }
 
