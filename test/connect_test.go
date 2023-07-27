@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"github.com/farseer-go/etcd"
-	"github.com/farseer-go/fs"
 	"github.com/farseer-go/fs/container"
 	"github.com/farseer-go/fs/flog"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +11,6 @@ import (
 )
 
 func TestConnect(t *testing.T) {
-	fs.Initialize[etcd.Module]("test etcd")
 	client := container.Resolve[etcd.IClient]("default")
 	assert.Equal(t, "", client.Original().Username)
 

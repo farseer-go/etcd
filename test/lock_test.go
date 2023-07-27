@@ -2,7 +2,6 @@ package test
 
 import (
 	"github.com/farseer-go/etcd"
-	"github.com/farseer-go/fs"
 	"github.com/farseer-go/fs/container"
 	"github.com/farseer-go/fs/flog"
 	"github.com/stretchr/testify/assert"
@@ -11,7 +10,6 @@ import (
 )
 
 func TestLock(t *testing.T) {
-	fs.Initialize[etcd.Module]("test etcd")
 	client := container.Resolve[etcd.IClient]("default")
 
 	result := 0
