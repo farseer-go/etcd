@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/farseer-go/fs/flog"
+	"github.com/farseer-go/linkTrace"
 	etcdV3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	"strings"
@@ -45,18 +46,22 @@ func newClient(config etcdConfig) IClient {
 }
 
 func (receiver *client) Put(key, value string) (*Header, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("Put", key, 0)
 	rsp, err := receiver.etcdCli.Put(todo, key, value)
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return nil, err
 	}
 	return newResponse(rsp.Header), err
 }
 
 func (receiver *client) PutLease(key, value string, leaseId LeaseID) (*Header, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("PutLease", key, int64(leaseId))
 	rsp, err := receiver.etcdCli.Put(todo, key, value, etcdV3.WithLease(etcdV3.LeaseID(leaseId)))
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return nil, err
 	}
 	return newResponse(rsp.Header), err
@@ -73,10 +78,13 @@ func (receiver *client) PutJsonLease(key string, data any, leaseId LeaseID) (*He
 }
 
 func (receiver *client) Get(key string) (*KeyValue, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("Get", key, 0)
+
 	var result *KeyValue
 	rsp, err := receiver.etcdCli.Get(todo, key)
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return nil, err
 	}
 	if len(rsp.Kvs) > 0 {
@@ -88,10 +96,13 @@ func (receiver *client) Get(key string) (*KeyValue, error) {
 }
 
 func (receiver *client) GetPrefixKey(prefixKey string) (map[string]*KeyValue, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("GetPrefixKey", prefixKey, 0)
+
 	result := make(map[string]*KeyValue)
 	rsp, err := receiver.etcdCli.Get(todo, prefixKey, etcdV3.WithPrefix())
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return result, err
 	}
 	for _, kv := range rsp.Kvs {
@@ -101,9 +112,12 @@ func (receiver *client) GetPrefixKey(prefixKey string) (map[string]*KeyValue, er
 }
 
 func (receiver *client) Exists(key string) bool {
+	traceDetailEtcd := linkTrace.TraceEtcd("Exists", key, 0)
+
 	rsp, err := receiver.etcdCli.Get(todo, key)
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return false
 	}
 	exists := len(rsp.Kvs) > 0 && rsp.Kvs[0].Version > 0
@@ -111,18 +125,24 @@ func (receiver *client) Exists(key string) bool {
 }
 
 func (receiver *client) Delete(key string) (*Header, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("Delete", key, 0)
+
 	rsp, err := receiver.etcdCli.Delete(todo, key)
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return nil, err
 	}
 	return newResponse(rsp.Header), err
 }
 
 func (receiver *client) DeletePrefixKey(prefixKey string) (*Header, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("DeletePrefixKey", prefixKey, 0)
+
 	rsp, err := receiver.etcdCli.Delete(todo, prefixKey, etcdV3.WithPrefix())
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return nil, err
 	}
 	return newResponse(rsp.Header), err
@@ -171,10 +191,12 @@ func (receiver *client) Close() {
 }
 
 func (receiver *client) LeaseGrant(ttl int64, keys ...string) (LeaseID, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("LeaseGrant", strings.Join(keys, ","), 0)
 	// 生成租约
 	leaseGrantResponse, err := receiver.etcdCli.Grant(todo, ttl)
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return 0, err
 	}
 
@@ -184,7 +206,6 @@ func (receiver *client) LeaseGrant(ttl int64, keys ...string) (LeaseID, error) {
 			// 是否有更简单的方案，不需要使用PUT，而直接对KEY赋加
 			rsp, err := receiver.etcdCli.Get(todo, key)
 			if err != nil {
-				_ = flog.Error(err)
 				continue
 			}
 			if len(rsp.Kvs) > 0 {
@@ -197,9 +218,12 @@ func (receiver *client) LeaseGrant(ttl int64, keys ...string) (LeaseID, error) {
 }
 
 func (receiver *client) LeaseKeepAlive(ctx context.Context, leaseId LeaseID) error {
+	traceDetailEtcd := linkTrace.TraceEtcd("LeaseKeepAlive", "", int64(leaseId))
 	keepRespChan, err := receiver.etcdCli.KeepAlive(ctx, etcdV3.LeaseID(leaseId))
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		return flog.Error(err)
+		return err
 	}
 
 	// 自动续租
@@ -222,28 +246,33 @@ func (receiver *client) LeaseKeepAlive(ctx context.Context, leaseId LeaseID) err
 }
 
 func (receiver *client) LeaseKeepAliveOnce(leaseId LeaseID) error {
+	traceDetailEtcd := linkTrace.TraceEtcd("LeaseKeepAliveOnce", "", int64(leaseId))
 	_, err := receiver.etcdCli.KeepAliveOnce(todo, etcdV3.LeaseID(leaseId))
-	flog.ErrorIfExists(err)
+	defer func() { traceDetailEtcd.End(err) }()
+
 	return err
 }
 
 func (receiver *client) LeaseRevoke(leaseId LeaseID) (*Header, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("LeaseRevoke", "", int64(leaseId))
 	revoke, err := receiver.etcdCli.Revoke(todo, etcdV3.LeaseID(leaseId))
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return nil, err
 	}
-
 	return newResponse(revoke.Header), nil
 }
 
 func (receiver *client) LeaseInfo(leaseId LeaseID) (*LeaseInfo, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("LeaseInfo", "", int64(leaseId))
+
 	leaseTimeToLiveResponse, err := receiver.etcdCli.TimeToLive(todo, etcdV3.LeaseID(leaseId))
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return nil, err
 	}
-
 	return newLeaseInfo(leaseTimeToLiveResponse), nil
 }
 
@@ -251,16 +280,19 @@ func (receiver *client) LeaseInfo(leaseId LeaseID) (*LeaseInfo, error) {
 type UnLock func()
 
 func (receiver *client) Lock(lockKey string, lockTTL int) (UnLock, error) {
+	traceDetailEtcd := linkTrace.TraceEtcd("Lock", lockKey, 0)
+
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	session, err := concurrency.NewSession(receiver.etcdCli, concurrency.WithTTL(lockTTL))
+	defer func() { traceDetailEtcd.End(err) }()
+
 	if err != nil {
-		_ = flog.Error(err)
 		return func() { cancelFunc() }, err
 	}
 	mutex := concurrency.NewMutex(session, lockKey)
 	err = mutex.Lock(ctx)
 	if err != nil {
-		_ = flog.Error(err)
+
 		return func() { cancelFunc() }, err
 	}
 
