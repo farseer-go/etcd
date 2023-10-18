@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/farseer-go/fs v0.8.0
+	github.com/farseer-go/linkTrace v0.0.0-20231014130523-ebfeba5c1a4a
 	github.com/stretchr/testify v1.8.4
 	go.etcd.io/etcd/api/v3 v3.5.9
 	go.etcd.io/etcd/client/v3 v3.5.9
