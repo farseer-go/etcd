@@ -3,8 +3,9 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"github.com/farseer-go/fs/container"
 	"github.com/farseer-go/fs/flog"
-	"github.com/farseer-go/linkTrace"
+	"github.com/farseer-go/fs/trace"
 	etcdV3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	"strings"
@@ -20,7 +21,8 @@ type etcdClient = etcdV3.Client
 type LeaseID int64
 
 type client struct {
-	etcdCli *etcdClient
+	etcdCli      *etcdClient
+	traceManager trace.IManager
 }
 
 // 创建客户端
@@ -41,12 +43,13 @@ func newClient(config etcdConfig) IClient {
 		flog.Panic(err)
 	}
 	return &client{
-		etcdCli: cli,
+		etcdCli:      cli,
+		traceManager: container.Resolve[trace.IManager](),
 	}
 }
 
 func (receiver *client) Put(key, value string) (*Header, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("Put", key, 0)
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("Put", key, 0)
 	rsp, err := receiver.etcdCli.Put(todo, key, value)
 	defer func() { traceDetailEtcd.End(err) }()
 
@@ -57,7 +60,7 @@ func (receiver *client) Put(key, value string) (*Header, error) {
 }
 
 func (receiver *client) PutLease(key, value string, leaseId LeaseID) (*Header, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("PutLease", key, int64(leaseId))
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("PutLease", key, int64(leaseId))
 	rsp, err := receiver.etcdCli.Put(todo, key, value, etcdV3.WithLease(etcdV3.LeaseID(leaseId)))
 	defer func() { traceDetailEtcd.End(err) }()
 
@@ -78,7 +81,7 @@ func (receiver *client) PutJsonLease(key string, data any, leaseId LeaseID) (*He
 }
 
 func (receiver *client) Get(key string) (*KeyValue, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("Get", key, 0)
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("Get", key, 0)
 
 	var result *KeyValue
 	rsp, err := receiver.etcdCli.Get(todo, key)
@@ -96,7 +99,7 @@ func (receiver *client) Get(key string) (*KeyValue, error) {
 }
 
 func (receiver *client) GetPrefixKey(prefixKey string) (map[string]*KeyValue, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("GetPrefixKey", prefixKey, 0)
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("GetPrefixKey", prefixKey, 0)
 
 	result := make(map[string]*KeyValue)
 	rsp, err := receiver.etcdCli.Get(todo, prefixKey, etcdV3.WithPrefix())
@@ -112,7 +115,7 @@ func (receiver *client) GetPrefixKey(prefixKey string) (map[string]*KeyValue, er
 }
 
 func (receiver *client) Exists(key string) bool {
-	traceDetailEtcd := linkTrace.TraceEtcd("Exists", key, 0)
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("Exists", key, 0)
 
 	rsp, err := receiver.etcdCli.Get(todo, key)
 	defer func() { traceDetailEtcd.End(err) }()
@@ -125,7 +128,7 @@ func (receiver *client) Exists(key string) bool {
 }
 
 func (receiver *client) Delete(key string) (*Header, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("Delete", key, 0)
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("Delete", key, 0)
 
 	rsp, err := receiver.etcdCli.Delete(todo, key)
 	defer func() { traceDetailEtcd.End(err) }()
@@ -137,7 +140,7 @@ func (receiver *client) Delete(key string) (*Header, error) {
 }
 
 func (receiver *client) DeletePrefixKey(prefixKey string) (*Header, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("DeletePrefixKey", prefixKey, 0)
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("DeletePrefixKey", prefixKey, 0)
 
 	rsp, err := receiver.etcdCli.Delete(todo, prefixKey, etcdV3.WithPrefix())
 	defer func() { traceDetailEtcd.End(err) }()
@@ -191,7 +194,7 @@ func (receiver *client) Close() {
 }
 
 func (receiver *client) LeaseGrant(ttl int64, keys ...string) (LeaseID, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("LeaseGrant", strings.Join(keys, ","), 0)
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("LeaseGrant", strings.Join(keys, ","), 0)
 	// 生成租约
 	leaseGrantResponse, err := receiver.etcdCli.Grant(todo, ttl)
 	defer func() { traceDetailEtcd.End(err) }()
@@ -218,7 +221,7 @@ func (receiver *client) LeaseGrant(ttl int64, keys ...string) (LeaseID, error) {
 }
 
 func (receiver *client) LeaseKeepAlive(ctx context.Context, leaseId LeaseID) error {
-	traceDetailEtcd := linkTrace.TraceEtcd("LeaseKeepAlive", "", int64(leaseId))
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("LeaseKeepAlive", "", int64(leaseId))
 	keepRespChan, err := receiver.etcdCli.KeepAlive(ctx, etcdV3.LeaseID(leaseId))
 	defer func() { traceDetailEtcd.End(err) }()
 
@@ -246,7 +249,7 @@ func (receiver *client) LeaseKeepAlive(ctx context.Context, leaseId LeaseID) err
 }
 
 func (receiver *client) LeaseKeepAliveOnce(leaseId LeaseID) error {
-	traceDetailEtcd := linkTrace.TraceEtcd("LeaseKeepAliveOnce", "", int64(leaseId))
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("LeaseKeepAliveOnce", "", int64(leaseId))
 	_, err := receiver.etcdCli.KeepAliveOnce(todo, etcdV3.LeaseID(leaseId))
 	defer func() { traceDetailEtcd.End(err) }()
 
@@ -254,7 +257,7 @@ func (receiver *client) LeaseKeepAliveOnce(leaseId LeaseID) error {
 }
 
 func (receiver *client) LeaseRevoke(leaseId LeaseID) (*Header, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("LeaseRevoke", "", int64(leaseId))
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("LeaseRevoke", "", int64(leaseId))
 	revoke, err := receiver.etcdCli.Revoke(todo, etcdV3.LeaseID(leaseId))
 	defer func() { traceDetailEtcd.End(err) }()
 
@@ -265,7 +268,7 @@ func (receiver *client) LeaseRevoke(leaseId LeaseID) (*Header, error) {
 }
 
 func (receiver *client) LeaseInfo(leaseId LeaseID) (*LeaseInfo, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("LeaseInfo", "", int64(leaseId))
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("LeaseInfo", "", int64(leaseId))
 
 	leaseTimeToLiveResponse, err := receiver.etcdCli.TimeToLive(todo, etcdV3.LeaseID(leaseId))
 	defer func() { traceDetailEtcd.End(err) }()
@@ -280,7 +283,7 @@ func (receiver *client) LeaseInfo(leaseId LeaseID) (*LeaseInfo, error) {
 type UnLock func()
 
 func (receiver *client) Lock(lockKey string, lockTTL int) (UnLock, error) {
-	traceDetailEtcd := linkTrace.TraceEtcd("Lock", lockKey, 0)
+	traceDetailEtcd := receiver.traceManager.TraceEtcd("Lock", lockKey, 0)
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	session, err := concurrency.NewSession(receiver.etcdCli, concurrency.WithTTL(lockTTL))
