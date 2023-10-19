@@ -161,7 +161,9 @@ func (receiver *client) Watch(ctx context.Context, key string, watchFunc func(ev
 					Type: event.Type.String(),
 					Kv:   newValue(event.Kv, &response.Header),
 				}
+				entryWatchKey := receiver.traceManager.EntryWatchKey(key)
 				watchFunc(watchEvent)
+				entryWatchKey.End()
 			}
 		}
 		flog.Info("退出了")
@@ -178,7 +180,9 @@ func (receiver *client) WatchPrefixKey(ctx context.Context, prefixKey string, wa
 					Type: event.Type.String(),
 					Kv:   newValue(event.Kv, &response.Header),
 				}
+				entryWatchKey := receiver.traceManager.EntryWatchKey(prefixKey)
 				watchFunc(watchEvent)
+				entryWatchKey.End()
 			}
 		}
 		flog.Info("退出了")
