@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.22.0
 
 require (
-	github.com/farseer-go/fs v0.13.0
+	github.com/farseer-go/fs v0.14.0
 	github.com/stretchr/testify v1.8.4
 	go.etcd.io/etcd/api/v3 v3.5.14
 	go.etcd.io/etcd/client/v3 v3.5.14
