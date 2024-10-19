@@ -3,13 +3,14 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"strings"
+	"time"
+
 	"github.com/farseer-go/fs/container"
 	"github.com/farseer-go/fs/flog"
 	"github.com/farseer-go/fs/trace"
 	etcdV3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/concurrency"
-	"strings"
-	"time"
 )
 
 var todo = context.TODO()
@@ -163,7 +164,7 @@ func (receiver *client) Watch(ctx context.Context, key string, watchFunc func(ev
 				}
 				entryWatchKey := receiver.traceManager.EntryWatchKey(key)
 				watchFunc(watchEvent)
-				entryWatchKey.End()
+				entryWatchKey.End(nil)
 			}
 		}
 		flog.Info("退出了")
@@ -182,7 +183,7 @@ func (receiver *client) WatchPrefixKey(ctx context.Context, prefixKey string, wa
 				}
 				entryWatchKey := receiver.traceManager.EntryWatchKey(prefixKey)
 				watchFunc(watchEvent)
-				entryWatchKey.End()
+				entryWatchKey.End(nil)
 			}
 		}
 		flog.Info("退出了")
