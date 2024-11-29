@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bytedance/sonic"
 	"github.com/farseer-go/fs/container"
 	"github.com/farseer-go/fs/flog"
+	"github.com/farseer-go/fs/snc"
 	"github.com/farseer-go/fs/trace"
 	etcdV3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -72,12 +72,12 @@ func (receiver *client) PutLease(key, value string, leaseId LeaseID) (*Header, e
 }
 
 func (receiver *client) PutJson(key string, data any) (*Header, error) {
-	jsonValue, _ := sonic.Marshal(data)
+	jsonValue, _ := snc.Marshal(data)
 	return receiver.Put(key, string(jsonValue))
 }
 
 func (receiver *client) PutJsonLease(key string, data any, leaseId LeaseID) (*Header, error) {
-	jsonValue, _ := sonic.Marshal(data)
+	jsonValue, _ := snc.Marshal(data)
 	return receiver.PutLease(key, string(jsonValue), leaseId)
 }
 
