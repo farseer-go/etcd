@@ -164,7 +164,7 @@ func (receiver *client) Watch(ctx context.Context, key string, watchFunc func(ev
 				}
 				entryWatchKey := receiver.traceManager.EntryWatchKey(key)
 				watchFunc(watchEvent)
-				entryWatchKey.End(nil)
+				container.Resolve[trace.IManager]().Push(entryWatchKey, nil)
 			}
 		}
 		flog.Info("退出了")
@@ -183,7 +183,7 @@ func (receiver *client) WatchPrefixKey(ctx context.Context, prefixKey string, wa
 				}
 				entryWatchKey := receiver.traceManager.EntryWatchKey(prefixKey)
 				watchFunc(watchEvent)
-				entryWatchKey.End(nil)
+				container.Resolve[trace.IManager]().Push(entryWatchKey, nil)
 			}
 		}
 		flog.Info("退出了")
