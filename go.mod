@@ -3,7 +3,6 @@ module github.com/farseer-go/etcd
 go 1.22.7
 
 require (
-	github.com/bytedance/sonic v1.12.4
 	github.com/farseer-go/fs v0.15.0
 	github.com/stretchr/testify v1.9.0
 	go.etcd.io/etcd/api/v3 v3.5.17
@@ -11,7 +10,6 @@ require (
 )
 
 require (
-	github.com/bytedance/sonic/loader v0.2.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
