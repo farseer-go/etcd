@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/farseer-go/fs/asyncLocal"
 	"github.com/farseer-go/fs/container"
 	"github.com/farseer-go/fs/flog"
 	"github.com/farseer-go/fs/snc"
@@ -156,6 +157,8 @@ func (receiver *client) Watch(ctx context.Context, key string, watchFunc func(ev
 	watch := receiver.etcdCli.Watch(ctx, key)
 	// 异步处理
 	go func() {
+		// InitContext 初始化同一协程上下文，避免在同一协程中多次初始化
+		asyncLocal.InitContext()
 		for response := range watch {
 			for _, event := range response.Events {
 				watchEvent := WatchEvent{
@@ -168,6 +171,7 @@ func (receiver *client) Watch(ctx context.Context, key string, watchFunc func(ev
 			}
 		}
 		flog.Info("退出了")
+		asyncLocal.Release()
 	}()
 }
 
@@ -175,6 +179,8 @@ func (receiver *client) WatchPrefixKey(ctx context.Context, prefixKey string, wa
 	watch := receiver.etcdCli.Watch(ctx, prefixKey, etcdV3.WithPrefix())
 	// 异步处理
 	go func() {
+		// InitContext 初始化同一协程上下文，避免在同一协程中多次初始化
+		asyncLocal.InitContext()
 		for response := range watch {
 			for _, event := range response.Events {
 				watchEvent := WatchEvent{
@@ -187,6 +193,7 @@ func (receiver *client) WatchPrefixKey(ctx context.Context, prefixKey string, wa
 			}
 		}
 		flog.Info("退出了")
+		asyncLocal.Release()
 	}()
 }
 
