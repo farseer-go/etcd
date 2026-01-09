@@ -28,7 +28,7 @@ type client struct {
 }
 
 // 创建客户端
-func newClient(config etcdConfig) IClient {
+func open(config etcdConfig) (IClient, error) {
 	cli, err := etcdV3.New(etcdV3.Config{
 		Endpoints:            strings.Split(config.Server, "|"),
 		DialTimeout:          time.Duration(config.DialTimeout) * time.Millisecond,
@@ -41,13 +41,10 @@ func newClient(config etcdConfig) IClient {
 		RejectOldCluster:     config.RejectOldCluster,
 		PermitWithoutStream:  config.PermitWithoutStream,
 	})
-	if err != nil {
-		flog.Panic(err)
-	}
 	return &client{
 		etcdCli:      cli,
 		traceManager: container.Resolve[trace.IManager](),
-	}
+	}, err
 }
 
 func (receiver *client) Put(key, value string) (*Header, error) {
