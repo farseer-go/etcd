@@ -1,6 +1,6 @@
 module github.com/farseer-go/etcd
 
-go 1.24.0
+go 1.18.0
 
 require (
 	github.com/farseer-go/fs v0.17.3
