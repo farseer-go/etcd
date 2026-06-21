@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/farseer-go/fs/asyncLocal"
-	"github.com/farseer-go/fs/container"
 	"github.com/farseer-go/fs/flog"
 	"github.com/farseer-go/fs/snc"
 	"github.com/farseer-go/fs/trace"
@@ -43,7 +42,7 @@ func open(config etcdConfig) (IClient, error) {
 	})
 	return &client{
 		etcdCli:      cli,
-		traceManager: container.Resolve[trace.IManager](),
+		traceManager: trace.Manager(),
 	}, err
 }
 
@@ -164,7 +163,7 @@ func (receiver *client) Watch(ctx context.Context, key string, watchFunc func(ev
 				}
 				entryWatchKey := receiver.traceManager.EntryWatchKey(key)
 				watchFunc(watchEvent)
-				container.Resolve[trace.IManager]().Push(entryWatchKey, nil)
+				trace.Manager().Push(entryWatchKey, nil)
 			}
 		}
 		flog.Info("退出了")
@@ -186,7 +185,7 @@ func (receiver *client) WatchPrefixKey(ctx context.Context, prefixKey string, wa
 				}
 				entryWatchKey := receiver.traceManager.EntryWatchKey(prefixKey)
 				watchFunc(watchEvent)
-				container.Resolve[trace.IManager]().Push(entryWatchKey, nil)
+				trace.Manager().Push(entryWatchKey, nil)
 			}
 		}
 		flog.Info("退出了")
